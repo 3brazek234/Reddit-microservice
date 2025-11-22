@@ -69,7 +69,7 @@ const userImplementation = {
     const { username, email, password } = call.request;
     try {
       const isExistingUser = await db.query(
-        `SELECT id FROM users WHERE email = $1`,
+        `SELECT id, email, password FROM users WHERE email = $1`,
         [email]
       );
 
@@ -118,33 +118,34 @@ const userImplementation = {
       });
     }
   },
-isAuthenticated: async (call, callback) => {
-  const userToken = call.request.token;
-  try {
-    // 1. فك تشفير التوك
-    const decoded = jwt.verify(userToken, process.env.JWT_SECRET);
+  isAuthenticated: async (call, callback) => {
+    const userToken = call.request.token;
+    try {
+      // 1. فك تشفير التوك
+      const decoded = jwt.verify(userToken, process.env.JWT_SECRET);
 
-    // 🚨 خطوة مهمة جداً للـ Debugging: اطبع شكل البيانات اللي راجعة من التوكن
-    console.log("Decoded JWT Payload:", decoded);
+      // 🚨 خطوة مهمة جداً للـ Debugging: اطبع شكل البيانات اللي راجعة من التوكن
+      console.log("Decoded JWT Payload:", decoded);
 
-    // 2. تجهيز كائن المستخدم حسب تعريف الـ Proto بالظبط
+      // 2. تجهيز كائن المستخدم حسب تعريف الـ Proto بالظبط
 
-    const userProtoObj = {   
-      email: decoded.email,
-    };
-
-    // 3. إرسال الرد النهائي مطابقاً لرسالة IsAuthenticatedResponse
-    callback(null, {
-
+      const userProtoObj = {
         email: decoded.email,
-    });
+      };
 
-  } catch (error) {
-    console.error("Auth Error:", error.message);
-    // إذا فشل فك التشفير أو انتهت صلاحية التوكن
-    callback({ code: grpc.status.UNAUTHENTICATED, details: "Invalid or expired token" });
-  }
-},
+      // 3. إرسال الرد النهائي مطابقاً لرسالة IsAuthenticatedResponse
+      callback(null, {
+        email: decoded.email,
+      });
+    } catch (error) {
+      console.error("Auth Error:", error.message);
+      // إذا فشل فك التشفير أو انتهت صلاحية التوكن
+      callback({
+        code: grpc.status.UNAUTHENTICATED,
+        details: "Invalid or expired token",
+      });
+    }
+  },
 };
 
 module.exports = userImplementation;
