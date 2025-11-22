@@ -1,9 +1,9 @@
 // grpc/userService.js
 const grpc = require("@grpc/grpc-js");
 const bcrypt = require("bcryptjs");
-const generateToken = require("../utils/generateToken"); // Note the path change
+const generateToken = require("../utils/generateToken");
 const db = require("../config/db");
-
+const jwt = require("jsonwebtoken");
 const SALT_ROUNDS = 10;
 
 const userImplementation = {
@@ -27,7 +27,7 @@ const userImplementation = {
           details: "wrong password",
         });
       }
-      const token = generateToken(rows[0]);
+      const token = generateToken.generateToken(rows[0]);
 
       return callback(null, { token });
     } catch (err) {
@@ -118,20 +118,33 @@ const userImplementation = {
       });
     }
   },
-  // You also need to implement the IsAuthenticated service method!
-  isAuthenticated: async (call, callback) => {
-    // This function needs the logic from utils/generateToken.js to verify the token
-    // You'll need a verifyToken function in that utility file.
-    // Example placeholder:
-    const { token } = call.request;
-    try {
-      const decodedUser = verifyToken(token); // Assuming you add this helper
-      // Fetch full user details from DB if necessary or just return decoded info
-      callback(null, { user: decodedUser, ok: true });
-    } catch (error) {
-      callback({ code: grpc.status.UNAUTHENTICATED, details: "Invalid token" });
-    }
-  },
+isAuthenticated: async (call, callback) => {
+  const userToken = call.request.token;
+  try {
+    // 1. فك تشفير التوك
+    const decoded = jwt.verify(userToken, process.env.JWT_SECRET);
+
+    // 🚨 خطوة مهمة جداً للـ Debugging: اطبع شكل البيانات اللي راجعة من التوكن
+    console.log("Decoded JWT Payload:", decoded);
+
+    // 2. تجهيز كائن المستخدم حسب تعريف الـ Proto بالظبط
+
+    const userProtoObj = {   
+      email: decoded.email,
+    };
+
+    // 3. إرسال الرد النهائي مطابقاً لرسالة IsAuthenticatedResponse
+    callback(null, {
+
+        email: decoded.email,
+    });
+
+  } catch (error) {
+    console.error("Auth Error:", error.message);
+    // إذا فشل فك التشفير أو انتهت صلاحية التوكن
+    callback({ code: grpc.status.UNAUTHENTICATED, details: "Invalid or expired token" });
+  }
+},
 };
 
 module.exports = userImplementation;

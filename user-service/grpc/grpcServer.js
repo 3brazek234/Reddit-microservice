@@ -1,4 +1,3 @@
-// grpc/grpcServer.js
 const grpc = require("@grpc/grpc-js");
 const server = new grpc.Server();
 
