@@ -2,6 +2,16 @@ import { Search, Plus, Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import Login from "../Login";
+import Register from "../Register";
 
 export const Header = () => {
   return (
@@ -32,11 +42,41 @@ export const Header = () => {
             <Bell className="h-5 w-5" />
           </Button>
           <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
+            <User className="h-4 w-4" />
             <span className="hidden sm:inline">Create Post</span>
           </Button>
           <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-[425px]">
+                {/* نضع Tabs كحاوية رئيسية داخل DialogContent */}
+                <Tabs defaultValue="login" className="w-full">
+                  <DialogHeader>
+                    <DialogTitle>Account Access</DialogTitle>{" "}
+                    {/* عنوان للنافذة */}
+                    <TabsList className="grid w-full grid-cols-2 mt-4">
+                      <TabsTrigger value="login">Login</TabsTrigger>
+                      <TabsTrigger value="register">Register</TabsTrigger>
+                    </TabsList>
+                  </DialogHeader>
+
+                  {/* محتوى التبويبات */}
+                  <div className="mt-4">
+                    <TabsContent value="login">
+                      <Login />
+                    </TabsContent>
+                    <TabsContent value="register">
+                      <Register />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
           </Button>
         </div>
       </div>

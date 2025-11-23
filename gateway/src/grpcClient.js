@@ -15,13 +15,19 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 });
 
 const userProto = grpc.loadPackageDefinition(packageDefinition).UserService;
-
+const postProto = grpc.loadPackageDefinition(packageDefinition).PostService;
 
 const userClient = new userProto(
   process.env.USER_SERVICE_URL,
   grpc.credentials.createInsecure()
 );
 
-console.log(`gRPC Client connected to ${process.env.USER_SERVICE_URL}`);
+const postClient = new postProto(
+  process.env.POST_SERVICE_URL,
+  grpc.credentials.createInsecure()
+);
 
-module.exports = userClient;
+console.log(`gRPC Client connected to ${process.env.USER_SERVICE_URL}`);
+console.log(`gRPC Client connected to ${process.env.POST_SERVICE_URL}`);
+
+module.exports = { userClient, postClient };

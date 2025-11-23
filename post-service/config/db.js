@@ -1,24 +1,12 @@
-
-const { Pool } = require("pg");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-const db = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT || "5432", 10),
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+const db = mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
-
-db.on("connect", () => {
-  console.log("Connected to the PostgreSQL database!");
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", () => {
+  console.log("Connected to MongoDB");
 });
-
-db.on("error", (err) => {
-  console.error("Error connecting to the PostgreSQL database:", err.message);
-});
-
 module.exports = db;
