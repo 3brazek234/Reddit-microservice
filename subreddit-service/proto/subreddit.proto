@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package subreddit;
+
+// تعريف رسالة Subreddit
+message Subreddit {
+    string id = 1; // معرف فريد للمجتمع (UUID أو String)
+    string name = 2; // اسم المجتمع (يجب أن يكون فريدًا)
+    string description = 3; // وصف المجتمع
+    int64 created_at = 5; // تاريخ ووقت الإنشاء (Unix timestamp)
+    int32 subscribers_count = 6; // عدد المشتركين
+}
+
+// تعريف رسالة Post (للاستخدام داخل Subreddit)
+message Post {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    string author_id = 4;
+    string subreddit_id = 5;
+    int64 created_at = 6;
+    int32 likes_count = 7; 
+    int32 comments_count = 8; // عدد التعليقات (اختياري، يمكن حسابه منفصلاً)
+}
+
+
+// إنشاء مجتمع جديد
+message CreateSubredditRequest {
+    string name = 1;
+    string description = 2;
+    string creator_id = 3;
+}
+
+message CreateSubredditResponse {
+    Subreddit subreddit = 1;
+}
+
+message GetSubredditRequest {
+    string id = 1; // يمكن البحث بالمعرف
+}
+
+message GetSubredditResponse {
+    Subreddit subreddit = 1;
+}
+
+message UpdateSubredditRequest {
+    string id = 1;
+    string description = 2;
+    string updater_id = 3; 
+}
+
+message UpdateSubredditResponse {
+    Subreddit subreddit = 1;
+}
+
+message DeleteSubredditRequest {
+    string id = 1;
+    string deleter_id = 2;
+}
+
+message DeleteSubredditResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// الاشتراك في مجتمع
+message SubscribeRequest {
+    string user_id = 1;
+    string subreddit_id = 2;
+}
+
+message SubscribeResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// إلغاء الاشتراك
+message UnsubscribeRequest {
+    string user_id = 1;
+    string subreddit_id = 2;
+}
+
+message UnsubscribeResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// الحصول على قائمة المجتمعات (مع إمكانية الفلترة والترتيب)
+message ListSubredditsRequest {
+    int32 page = 1; // رقم الصفحة
+    int32 page_size = 2; // عدد العناصر في الصفحة
+    string sort_by = 3; // الترتيب حسب (مثلاً: "created_at", "subscribers_count")
+    string order = 4; // اتجاه الترتيب ("asc" أو "desc")
+    string search_query = 5; // البحث بالاسم أو الوصف
+}
+
+message ListSubredditsResponse {
+    repeated Subreddit subreddits = 1;
+    int32 total_count = 2; // العدد الإجمالي للمجتمعات
+}
+
+// إنشاء منشور في مجتمع
+message CreatePostRequest {
+    string title = 1;
+    string content = 2;
+    string author_id = 3;
+    string subreddit_id = 4;
+}
+
+message CreatePostResponse {
+    Post post = 1;
+}
+
+// الحصول على منشورات مجتمع معين
+message GetSubredditPostsRequest {
+    string subreddit_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    string sort_by = 4; // مثلاً: "created_at", "likes_count"
+    string order = 5;
+}
+
+message GetSubredditPostsResponse {
+    repeated Post posts = 1;
+    int32 total_count = 2;
+}
+
+
+// تعريف خدمة Subreddit
+service SubredditService {
+    // إدارة المجتمعات
+    rpc CreateSubreddit(CreateSubredditRequest) returns (CreateSubredditResponse);
+    rpc GetSubreddit(GetSubredditRequest) returns (GetSubredditResponse);
+    rpc UpdateSubreddit(UpdateSubredditRequest) returns (UpdateSubredditResponse);
+    rpc DeleteSubreddit(DeleteSubredditRequest) returns (DeleteSubredditResponse);
+    rpc ListSubreddits(ListSubredditsRequest) returns (ListSubredditsResponse);
+
+    // الاشتراك
+    rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+    rpc Unsubscribe(UnsubscribeRequest) returns (UnsubscribeResponse);
+
+    // المنشورات داخل المجتمع
+    rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+    rpc GetSubredditPosts(GetSubredditPostsRequest) returns (GetSubredditPostsResponse);
+}

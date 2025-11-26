@@ -1,11 +1,11 @@
 // src/services/postServices.js
-const grpc = require('@grpc/grpc-js');
+const grpc = require("@grpc/grpc-js");
 const Post = require("../models/schemaPosts");
+const userService = require("../grpc/userClient");
 const Comment = require("../models/comment");
 const Like = require("../models/like");
 
 const postServices = {
-
   // --- دوال الـ Post الأساسية (create, get, update) ---
   // (تم تعديلها لتتوافق مع Mongoose)
 
@@ -25,13 +25,12 @@ const postServices = {
       const newPost = new Post({
         title,
         content: description, // الموديل بتاعك فيه content مش description
-        author: authorId,     // الموديل بتاعك فيه author
-        subreddit: subreddit_id // الموديل بتاعك فيه subreddit
+        author: authorId, // الموديل بتاعك فيه author
+        subreddit: subreddit_id, // الموديل بتاعك فيه subreddit
       });
       await newPost.save();
 
       return callback(null, { post: newPost.toObject() });
-
     } catch (error) {
       console.error("Error creating post:", error);
 
@@ -41,26 +40,41 @@ const postServices = {
       });
     }
   },
-
+  getUserDetails: (userId) => {
+    return new Promise((resolve, reject) => {
+      userService.getUser({ id: userId }, (error, response) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  },
   getPost: async (call, callback) => {
+    // this id of post to get its details
     const { id } = call.request;
     try {
-      const post = await Post.findById(id)
-                             .populate('author', 'username') 
-                             .populate('subreddit', 'name'); 
-
+      const post = await Post.findById(id);
+      let authorDetails = {};
+      try {
+        authorDetails = await getUserDetails(post.author);
+      } catch (userError) {
+        console.error(
+          `Failed to fetch author details for ID ${post.author}:`,
+          userError
+        );
+        authorDetails = { id: post.author, username: "Unknown User" };
+      }
       if (post) {
- 
         const postResponse = {
           id: post._id.toString(),
           title: post.title,
-          // تأكد من أسماء الحقول في الـ proto
           author_id: post.author._id.toString(),
           author_name: post.author.username,
           subreddit_id: post.subreddit._id.toString(),
           subreddit_name: post.subreddit.name,
           description: post.content,
-          // likesCount: ... (سنحسبها لاحقاً)
         };
         callback(null, { post: postResponse });
       } else {
@@ -109,11 +123,10 @@ const postServices = {
       // التحديث باستخدام Mongoose
       if (title) existingPost.title = title;
       if (description) existingPost.content = description;
-      
+
       const updatedPost = await existingPost.save();
 
       return callback(null, { post: updatedPost.toObject() });
-
     } catch (error) {
       console.error("Error updating post:", error);
       return callback({
@@ -144,7 +157,7 @@ const postServices = {
       const newLike = new Like({
         user: userId,
         target: postId,
-        targetModel: 'Post' // نحدد أن الهدف هو بوست
+        targetModel: "Post", // نحدد أن الهدف هو بوست
       });
 
       await newLike.save();
@@ -152,13 +165,10 @@ const postServices = {
       // الرد بالنجاح (ممكن ترجع true أو كائن اللايك)
       // نفترض الـ proto يتوقع success boolean
       return callback(null, { success: true });
-
     } catch (error) {
       // التعامل مع خطأ التكرار (Duplicate Key Error)
       if (error.code === 11000) {
- 
-          return callback(null, { success: true, message: "Already liked." });
-  
+        return callback(null, { success: true, message: "Already liked." });
       }
 
       console.error("Error liking post:", error);
@@ -171,13 +181,17 @@ const postServices = {
 
   commentPost: async (call, callback) => {
     // id هنا هو post_id
-    const { id: postId, user_id: userId, comment: commentContent } = call.request;
+    const {
+      id: postId,
+      user_id: userId,
+      comment: commentContent,
+    } = call.request;
 
     if (!commentContent) {
-         return callback({
-            code: grpc.status.INVALID_ARGUMENT,
-            details: "Comment content is required.",
-        });
+      return callback({
+        code: grpc.status.INVALID_ARGUMENT,
+        details: "Comment content is required.",
+      });
     }
 
     try {
@@ -193,14 +207,12 @@ const postServices = {
       // 2. إنشاء التعليق
       const newComment = new Comment({
         content: commentContent,
-        author: userId, 
-        post: postId
-    
+        author: userId,
+        post: postId,
       });
 
       await newComment.save();
       return callback(null, { comment: newComment.toObject() });
-
     } catch (error) {
       console.error("Error commenting on post:", error);
       return callback({

@@ -1,25 +1,26 @@
 const mongoose = require("mongoose");
-const likeSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
+const likeSchema = new mongoose.Schema(
+  {
+    user: {
+      type: "string",
+      required: true,
+    },
 
-  target: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    refPath: 'targetModel'
+    target: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      refPath: "targetModel",
+    },
+    targetModel: {
+      type: String,
+      required: true,
+      enum: ["Post", "Comment"],
+    },
   },
-  targetModel: {
-    type: String,
-    required: true,
-    enum: ['Post', 'Comment'] 
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
-
+);
 
 likeSchema.index({ user: 1, target: 1, targetModel: 1 }, { unique: true });
 
